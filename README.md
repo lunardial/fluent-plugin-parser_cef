@@ -1,5 +1,12 @@
 # fluent-plugin-parser_cef
 
+[![Gem Version](https://badge.fury.io/rb/fluent-plugin-parser_cef.svg)](https://badge.fury.io/rb/fluent-plugin-parser_cef)
+[![Build Status](https://travis-ci.org/lunardial/fluent-plugin-parser_cef.svg?branch=master)](https://travis-ci.org/lunardial/fluent-plugin-parser_cef)
+[![Code Climate](https://codeclimate.com/github/lunardial/fluent-plugin-parser_cef/badges/gpa.svg)](https://codeclimate.com/github/lunardial/fluent-plugin-parser_cef)
+[![Issue Count](https://codeclimate.com/github/lunardial/fluent-plugin-parser_cef/badges/issue_count.svg)](https://codeclimate.com/github/lunardial/fluent-plugin-parser_cef)
+[![downloads](https://img.shields.io/gem/dt/fluent-plugin-parser_cef.svg)](https://rubygems.org/gems/fluent-plugin-parser_cef)
+[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
+
 Fluentd Parser plugin to parse CEF - common event format -
 
 ## Installation

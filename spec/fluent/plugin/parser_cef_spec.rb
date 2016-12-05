@@ -26,6 +26,7 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
   end
 
   describe "#parse(text)" do
+
     context "text == nil" do
       let (:text) { nil }
       subject do
@@ -43,6 +44,7 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
     context "text is not syslog format nor CEF" do
       let (:text) { "December 12 10:00:00 hostname tag message" }
       subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
         @test_driver.parse(text)
       end
       it { is_expected.to contain_exactly(be_an(Integer), {"raw"=>"December 12 10:00:00 hostname tag message"}) }
@@ -50,6 +52,7 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
     context "text is not in syslog format but is CEF" do
       let (:text) { "December 12 10:00:00 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|cs1=test" }
       subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
         @test_driver.parse(text)
       end
       it { is_expected.to contain_exactly(be_an(Integer), {"raw"=>"December 12 10:00:00 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|cs1=test"}) }
@@ -57,6 +60,7 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
     context "text is syslog format but not CEF" do
       let (:text) { "Dec 12 10:11:12 hostname tag message" }
       subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
         @test_driver.parse(text)
       end
       it { is_expected.to contain_exactly(be_an(Integer), {"raw"=>"Dec 12 10:11:12 hostname tag message"}) }
@@ -64,10 +68,12 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
     context "text is syslog format and CEF (CEF Extension field is empty)" do
       let (:text) { "Dec  2 03:17:06 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|" }
       subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
+        @timestamp = Time.parse("Dec  2 03:17:06").to_i
         @test_driver.parse(text)
       end
       it { is_expected.to eq [
-        1480616226,
+        @timestamp,
         {"syslog_timestamp"=>"Dec  2 03:17:06",
          "syslog_hostname"=>"hostname",
          "syslog_tag"=>"tag",
@@ -83,10 +89,12 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
     context "text is syslog format and CEF (there is only one valid key in the CEF Extension field), Strict mode on" do
       let (:text) { "Dec  2 03:17:06 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|cs1=test" }
       subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
+        @timestamp = Time.parse("Dec  2 03:17:06").to_i
         @test_driver.parse(text)
       end
       it { is_expected.to eq [
-        1480616226,
+        @timestamp,
         {"syslog_timestamp"=>"Dec  2 03:17:06",
          "syslog_hostname"=>"hostname",
          "syslog_tag"=>"tag",
@@ -106,11 +114,13 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
       ]}
       let (:text) { "Dec  2 03:17:06 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|foo=bar" }
       subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
+        @timestamp = Time.parse("Dec  2 03:17:06").to_i
         @test_driver = create_driver(config)
         @test_driver.parse(text)
       end
       it { is_expected.to eq [
-        1480616226,
+        @timestamp,
         {"syslog_timestamp"=>"Dec  2 03:17:06",
          "syslog_hostname"=>"hostname",
          "syslog_tag"=>"tag",
@@ -130,11 +140,13 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
       ]}
       let (:text) { "2014-06-07T18:55:09.019283+09:00 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|foo=bar" }
       subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
+        @timestamp = Time.parse("2014-06-07T18:55:09.019283+09:00").to_i
         @test_driver = create_driver(config)
         @test_driver.parse(text)
       end
       it { is_expected.to eq [
-        1402134909,
+        @timestamp,
         {"syslog_timestamp"=>"2014-06-07T18:55:09.019283+09:00",
          "syslog_hostname"=>"hostname",
          "syslog_tag"=>"tag",
