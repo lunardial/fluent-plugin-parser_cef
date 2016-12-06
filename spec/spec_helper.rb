@@ -20,6 +20,16 @@
 $LOAD_PATH.unshift(File.expand_path('../lib', __FILE__))
 $LOAD_PATH.unshift(File.expand_path('../spec', __FILE__))
 
+require 'simplecov'
+require 'coveralls'
+Coveralls.wear!
+
+SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
+  SimpleCov::Formatter::HTMLFormatter,
+  Coveralls::SimpleCov::Formatter
+]
+SimpleCov.start
+
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest
