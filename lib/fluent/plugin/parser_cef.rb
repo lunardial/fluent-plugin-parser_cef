@@ -33,7 +33,7 @@ module Fluent
               yaml_fieldinfo = YAML.load_file("#{File.dirname(File.expand_path(__FILE__))}/#{@cef_keyfilename}")
             end
             @keys_array = []
-            yaml_fieldinfo.each {|key, value| @keys_array.concat(value) }
+            yaml_fieldinfo.each {|_key, value| @keys_array.concat(value) }
             $log.info "running with strict mode, #{@keys_array.length} keys are valid."
           else
             $log.info "running without strict mode"
@@ -100,7 +100,7 @@ module Fluent
 
         begin
           time = Time.parse(record_overview["syslog_timestamp"]).to_i
-        rescue => e
+        rescue
           time = Engine.now
         end
 
@@ -108,11 +108,18 @@ module Fluent
           record_overview.names.each {|key| record[key] = record_overview[key] }
           text_cef_extension = record_overview["cef_extension"]
           record.delete("cef_extension")
-          unless text_cef_extension.nil?
-            record_cef_extension = parse_cef_extension(text_cef_extension)
-            record.merge!(record_cef_extension)
+        rescue
+          if block_given?
+            yield Engine.now, { "raw" => text }
+            return
+          else
+            return Engine.now, { "raw" => text }
           end
-        rescue => e
+        end
+
+        unless text_cef_extension.nil?
+          record_cef_extension = parse_cef_extension(text_cef_extension)
+          record.merge!(record_cef_extension)
         end
 
         record["raw"] = text if @output_raw_field
@@ -126,7 +133,11 @@ module Fluent
 
 
       def parse_cef_extension(text)
-        record = @parse_strict_mode ? parse_cef_extension_with_strict_mode(text) : parse_cef_extension_without_strict_mode(text)
+        if @parse_strict_mode == true
+          return parse_cef_extension_with_strict_mode(text)
+        else
+          return parse_cef_extension_without_strict_mode(text)
+        end
       end
 
 
@@ -143,7 +154,7 @@ module Fluent
               record[last_valid_key_name].concat("#{key}=#{value}")
             end
           end
-        rescue => e
+        rescue
           return {}
         end
         return record
@@ -154,7 +165,7 @@ module Fluent
         record = {}
         begin
           text.scan(@key_value_format_regexp) {|key, value| record[key] = value.rstrip }
-        rescue => e
+        rescue
           return {}
         end
         return record

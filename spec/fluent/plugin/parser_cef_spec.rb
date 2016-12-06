@@ -47,7 +47,7 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
         allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
         @test_driver.parse(text)
       end
-      it { is_expected.to contain_exactly(be_an(Integer), {"raw"=>"December 12 10:00:00 hostname tag message"}) }
+      it { is_expected.to contain_exactly(be_an(Integer), { "raw" => "December 12 10:00:00 hostname tag message" }) }
     end
     context "text is not in syslog format but is CEF" do
       let (:text) { "December 12 10:00:00 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|cs1=test" }
@@ -55,7 +55,7 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
         allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
         @test_driver.parse(text)
       end
-      it { is_expected.to contain_exactly(be_an(Integer), {"raw"=>"December 12 10:00:00 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|cs1=test"}) }
+      it { is_expected.to contain_exactly(be_an(Integer), { "raw" => "December 12 10:00:00 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|cs1=test" }) }
     end
     context "text is syslog format but not CEF" do
       let (:text) { "Dec 12 10:11:12 hostname tag message" }
@@ -63,7 +63,7 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
         allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
         @test_driver.parse(text)
       end
-      it { is_expected.to contain_exactly(be_an(Integer), {"raw"=>"Dec 12 10:11:12 hostname tag message"}) }
+      it { is_expected.to contain_exactly(be_an(Integer), { "raw" => "Dec 12 10:11:12 hostname tag message" }) }
     end
     context "text is syslog format and CEF (CEF Extension field is empty)" do
       let (:text) { "Dec  2 03:17:06 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|" }
@@ -73,18 +73,17 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
         @test_driver.parse(text)
       end
       it { is_expected.to eq [
-        @timestamp,
-        {"syslog_timestamp"=>"Dec  2 03:17:06",
-         "syslog_hostname"=>"hostname",
-         "syslog_tag"=>"tag",
-         "cef_version"=>"0",
-         "cef_device_vendor"=>"Vendor",
-         "cef_device_product"=>"Product",
-         "cef_device_version"=>"Version",
-         "cef_device_event_class_id"=>"ID",
-         "cef_name"=>"Name",
-         "cef_severity"=>"Severity"}
-      ]}
+        @timestamp, {
+          "syslog_timestamp" => "Dec  2 03:17:06",
+          "syslog_hostname" => "hostname",
+          "syslog_tag" => "tag",
+          "cef_version" => "0",
+          "cef_device_vendor" => "Vendor",
+          "cef_device_product" => "Product",
+          "cef_device_version" => "Version",
+          "cef_device_event_class_id" => "ID",
+          "cef_name" => "Name",
+          "cef_severity" => "Severity" }]}
     end
     context "text is syslog format and CEF (there is only one valid key in the CEF Extension field), Strict mode on" do
       let (:text) { "Dec  2 03:17:06 hostname tag CEF:0|Vendor|Product|Version|ID|Name|Severity|cs1=test" }
@@ -94,19 +93,18 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
         @test_driver.parse(text)
       end
       it { is_expected.to eq [
-        @timestamp,
-        {"syslog_timestamp"=>"Dec  2 03:17:06",
-         "syslog_hostname"=>"hostname",
-         "syslog_tag"=>"tag",
-         "cef_version"=>"0",
-         "cef_device_vendor"=>"Vendor",
-         "cef_device_product"=>"Product",
-         "cef_device_version"=>"Version",
-         "cef_device_event_class_id"=>"ID",
-         "cef_name"=>"Name",
-         "cef_severity"=>"Severity",
-         "cs1"=>"test"}
-      ]}
+        @timestamp, {
+          "syslog_timestamp" => "Dec  2 03:17:06",
+          "syslog_hostname" => "hostname",
+          "syslog_tag" => "tag",
+          "cef_version" => "0",
+          "cef_device_vendor" => "Vendor",
+          "cef_device_product" => "Product",
+          "cef_device_version" => "Version",
+          "cef_device_event_class_id" => "ID",
+          "cef_name" => "Name",
+          "cef_severity" => "Severity",
+          "cs1" => "test" }]}
     end
     context "text is syslog format and CEF (there is only one valid key in the CEF Extension field), Strict mode off" do
       let (:config) {%[
@@ -120,19 +118,18 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
         @test_driver.parse(text)
       end
       it { is_expected.to eq [
-        @timestamp,
-        {"syslog_timestamp"=>"Dec  2 03:17:06",
-         "syslog_hostname"=>"hostname",
-         "syslog_tag"=>"tag",
-         "cef_version"=>"0",
-         "cef_device_vendor"=>"Vendor",
-         "cef_device_product"=>"Product",
-         "cef_device_version"=>"Version",
-         "cef_device_event_class_id"=>"ID",
-         "cef_name"=>"Name",
-         "cef_severity"=>"Severity",
-         "foo"=>"bar"}
-      ]}
+        @timestamp, {
+          "syslog_timestamp" => "Dec  2 03:17:06",
+          "syslog_hostname" => "hostname",
+          "syslog_tag" => "tag",
+          "cef_version" => "0",
+          "cef_device_vendor" => "Vendor",
+          "cef_device_product" => "Product",
+          "cef_device_version" => "Version",
+          "cef_device_event_class_id" => "ID",
+          "cef_name" => "Name",
+          "cef_severity" => "Severity",
+          "foo" => "bar" }]}
     end
     context "text is syslog format and CEF (there is only one valid key in the CEF Extension field), Strict mode on, timestamp is rfc3339" do
       let (:config) {%[
@@ -146,18 +143,17 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
         @test_driver.parse(text)
       end
       it { is_expected.to eq [
-        @timestamp,
-        {"syslog_timestamp"=>"2014-06-07T18:55:09.019283+09:00",
-         "syslog_hostname"=>"hostname",
-         "syslog_tag"=>"tag",
-         "cef_version"=>"0",
-         "cef_device_vendor"=>"Vendor",
-         "cef_device_product"=>"Product",
-         "cef_device_version"=>"Version",
-         "cef_device_event_class_id"=>"ID",
-         "cef_name"=>"Name",
-         "cef_severity"=>"Severity"}
-      ]}
+        @timestamp, {
+          "syslog_timestamp" => "2014-06-07T18:55:09.019283+09:00",
+          "syslog_hostname" => "hostname",
+          "syslog_tag" => "tag",
+          "cef_version" => "0",
+          "cef_device_vendor" => "Vendor",
+          "cef_device_product" => "Product",
+          "cef_device_version" => "Version",
+          "cef_device_event_class_id" => "ID",
+          "cef_name" => "Name",
+          "cef_severity" => "Severity" }]}
     end
   end
 end
