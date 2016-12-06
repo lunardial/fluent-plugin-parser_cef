@@ -1,4 +1,3 @@
----
 engines:
   duplication:
     enabled: true
@@ -12,6 +11,11 @@ engines:
     enabled: true
   rubocop:
     enabled: true
+    checks:
+      Rubocop/Metrics/MethodLength:
+        enabled: false
+      Rubocop/Metrics/CyclomaticComplexity:
+        enabled: false
 ratings:
   paths:
   - "**.inc"
@@ -23,11 +27,3 @@ ratings:
   - "**.rb"
 exclude_paths:
 - spec/
-engines:
-  rubocop:
-    enabled: true
-    checks:
-      Rubocop/Metrics/MethodLength:
-        enabled: false
-      Rubocop/Metrics/CyclomaticComplexity:
-        enabled: false
