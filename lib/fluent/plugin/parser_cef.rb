@@ -12,6 +12,7 @@ module Fluent
       Plugin.register_parser("cef", self)
 
       config_param :log_format, :string, :default => "syslog"
+      config_param :log_utc_offset, :string, :default => nil
       config_param :syslog_timestamp_format, :string, :default => '\w{3}\s+\d{1,2}\s\d{2}:\d{2}:\d{2}'
       config_param :cef_version, :integer, :default => 0
       config_param :parse_strict_mode, :bool, :default => true
@@ -24,6 +25,7 @@ module Fluent
 
         @key_value_format_regexp = /([^\s=]+)=(.*?)(?:(?=[^\s=]+=)|\z)/
         @valid_format_regexp = create_valid_format_regexp
+        @utc_offset = get_utc_offset(@log_utc_offset)
 
         begin
           if @parse_strict_mode
@@ -45,6 +47,18 @@ module Fluent
         end
       end
 
+      def get_utc_offset(text)
+        utc_offset = nil
+        begin
+          utc_offset = Time.new.localtime(text).strftime("%:z")
+          $log.info "utc_offset: #{utc_offset}"
+        rescue => e
+          utc_offset = Time.new.localtime.strftime("%:z")
+          $log.info "#{e.message}, use localtime"
+          $log.info "utc_offset: #{utc_offset}"
+        end
+        return utc_offset
+      end
 
       def create_valid_format_regexp()
         case @log_format
@@ -66,6 +80,7 @@ module Fluent
           valid_format_regexp = /
               \A
                 #{syslog_header}
+                (?:\u{feff})?
                 #{cef_header}\|
                 (?<cef_extension>.*)
               \z
@@ -74,6 +89,21 @@ module Fluent
           raise Fluent::ConfigError, "#{@log_format} is unknown format"
         end
         return Regexp.new(valid_format_regexp)
+      end
+
+
+      def get_unixtime_with_utc_offset(timestamp, utc_offset)
+        unixtime = nil
+        begin
+          if timestamp =~ /[-+]\d{2}:?\d{2}\z/
+            unixtime = Time.parse(timestamp).to_i
+          else
+            unixtime = Time.parse("#{timestamp} #{utc_offset}").to_i
+          end
+        rescue
+          unixtime = Engine.now
+        end
+        return unixtime
       end
 
 
@@ -87,6 +117,7 @@ module Fluent
           end
         end
 
+        text.force_encoding("utf-8")
         record = {}
         record_overview = @valid_format_regexp.match(text)
         if record_overview.nil?
@@ -98,11 +129,7 @@ module Fluent
           end
         end
 
-        begin
-          time = Time.parse(record_overview["syslog_timestamp"]).to_i
-        rescue
-          time = Engine.now
-        end
+        time = get_unixtime_with_utc_offset(record_overview["syslog_timestamp"], @utc_offset)
 
         begin
           record_overview.names.each {|key| record[key] = record_overview[key] }

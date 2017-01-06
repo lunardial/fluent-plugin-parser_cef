@@ -46,6 +46,14 @@ td-agent-gem install fluent-plugin-parser_cef
 
   input log format, currently only 'syslog' is valid
 
+* `log_utc_offset` (default: nil)
+
+  set log utc_offset if each record does not have timezone information and the timezone is not local timezone
+
+  if log_utc_offset set to nil or invalid value, then use system timezone
+
+  if a log have timezone information, log_utc_offset is ignored
+
 * `syslog_timestamp` (default: '\w{3}\s+\d{1,2}\s\d{2}:\d{2}:\d{2}')
 
   syslog timestamp format, the default is traditional syslog timestamp
