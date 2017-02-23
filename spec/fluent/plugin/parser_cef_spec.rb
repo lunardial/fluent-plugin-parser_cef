@@ -283,5 +283,35 @@ RSpec.describe Fluent::TextParser::CommonEventFormatParser do
           "cef_severity" => "Severity",
           "cs1" => "test" }]}
     end
+    context "syslog message is UTF-8, but including invalid UTF-8 string" do
+      let (:config) {%[
+        log_utc_offset  +09:00
+      ]}
+      let (:text) { "Feb 19 00:35:11 hogehuga CEF:0|Vendor|Product|Version|ID|Name|Severity|src=192.168.1.1 spt=60000 dst=172.16.100.100 dpt=80 msg=\xe3\x2e\x2e\x2e" }
+      subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Time.now.to_i)
+        @timestamp = Time.parse("Feb 19 00:35:11 +09:00").to_i
+        @test_driver = create_driver(config)
+        text.force_encoding("ascii-8bit")
+        @test_driver.parse(text)
+      end
+      it { is_expected.to eq [
+        @timestamp, {
+          "syslog_timestamp" => "Feb 19 00:35:11",
+          "syslog_hostname" => "hogehuga",
+          "syslog_tag" => "",
+          "cef_version" => "0",
+          "cef_device_vendor" => "Vendor",
+          "cef_device_product" => "Product",
+          "cef_device_version" => "Version",
+          "cef_device_event_class_id" => "ID",
+          "cef_name" => "Name",
+          "cef_severity" => "Severity",
+          "src" => "192.168.1.1",
+          "spt" => "60000",
+          "dst" => "172.16.100.100",
+          "dpt" => "80",
+          "msg" => "\xe3\x2e\x2e\x2e".scrub('?') }]}
+    end
   end
 end

@@ -8,9 +8,7 @@ require 'yaml'
 module Fluent
   class TextParser
     class CommonEventFormatParser < Parser
-
       Plugin.register_parser("cef", self)
-
       config_param :log_format, :string, :default => "syslog"
       config_param :log_utc_offset, :string, :default => nil
       config_param :syslog_timestamp_format, :string, :default => '\w{3}\s+\d{1,2}\s\d{2}:\d{2}:\d{2}'
@@ -19,14 +17,11 @@ module Fluent
       config_param :cef_keyfilename, :string, :default => 'config/cef_version_0_keys.yaml'
       config_param :output_raw_field, :bool, :default => false
 
-
       def configure(conf)
         super
-
         @key_value_format_regexp = /([^\s=]+)=(.*?)(?:(?=[^\s=]+=)|\z)/
         @valid_format_regexp = create_valid_format_regexp
         @utc_offset = get_utc_offset(@log_utc_offset)
-
         begin
           if @parse_strict_mode
             if @cef_keyfilename =~ /^\//
@@ -46,6 +41,55 @@ module Fluent
           $log.warn "#{e.message}"
         end
       end
+
+      def parse(text)
+        if text.nil? || text.empty?
+          if block_given?
+            yield nil, nil
+            return
+          else
+            return nil, nil
+          end
+        end
+        text.force_encoding("utf-8")
+        replaced_text = text.scrub('?')
+        record = {}
+        record_overview = @valid_format_regexp.match(replaced_text)
+        if record_overview.nil?
+          if block_given?
+            yield Engine.now, { "raw" => replaced_text }
+            return
+          else
+            return Engine.now, { "raw" => replaced_text }
+          end
+        end
+        time = get_unixtime_with_utc_offset(record_overview["syslog_timestamp"], @utc_offset)
+        begin
+          record_overview.names.each {|key| record[key] = record_overview[key] }
+          text_cef_extension = record_overview["cef_extension"]
+          record.delete("cef_extension")
+        rescue
+          if block_given?
+            yield Engine.now, { "raw" => replaced_text }
+            return
+          else
+            return Engine.now, { "raw" => replaced_text }
+          end
+        end
+        unless text_cef_extension.nil?
+          record_cef_extension = parse_cef_extension(text_cef_extension)
+          record.merge!(record_cef_extension)
+        end
+        record["raw"] = replaced_text if @output_raw_field
+        if block_given?
+          yield time, record
+          return
+        else
+          return time, record
+        end
+      end
+
+      private
 
       def get_utc_offset(text)
         utc_offset = nil
@@ -91,7 +135,6 @@ module Fluent
         return Regexp.new(valid_format_regexp)
       end
 
-
       def get_unixtime_with_utc_offset(timestamp, utc_offset)
         unixtime = nil
         begin
@@ -106,59 +149,6 @@ module Fluent
         return unixtime
       end
 
-
-      def parse(text)
-        if text.nil? || text.empty?
-          if block_given?
-            yield nil, nil
-            return
-          else
-            return nil, nil
-          end
-        end
-
-        text.force_encoding("utf-8")
-        record = {}
-        record_overview = @valid_format_regexp.match(text)
-        if record_overview.nil?
-          if block_given?
-            yield Engine.now, { "raw" => text }
-            return
-          else
-            return Engine.now, { "raw" => text }
-          end
-        end
-
-        time = get_unixtime_with_utc_offset(record_overview["syslog_timestamp"], @utc_offset)
-
-        begin
-          record_overview.names.each {|key| record[key] = record_overview[key] }
-          text_cef_extension = record_overview["cef_extension"]
-          record.delete("cef_extension")
-        rescue
-          if block_given?
-            yield Engine.now, { "raw" => text }
-            return
-          else
-            return Engine.now, { "raw" => text }
-          end
-        end
-
-        unless text_cef_extension.nil?
-          record_cef_extension = parse_cef_extension(text_cef_extension)
-          record.merge!(record_cef_extension)
-        end
-
-        record["raw"] = text if @output_raw_field
-        if block_given?
-          yield time, record
-          return
-        else
-          return time, record
-        end
-      end
-
-
       def parse_cef_extension(text)
         if @parse_strict_mode == true
           return parse_cef_extension_with_strict_mode(text)
@@ -166,7 +156,6 @@ module Fluent
           return parse_cef_extension_without_strict_mode(text)
         end
       end
-
 
       def parse_cef_extension_with_strict_mode(text)
         record = {}
@@ -186,7 +175,6 @@ module Fluent
         end
         return record
       end
-
 
       def parse_cef_extension_without_strict_mode(text)
         record = {}
