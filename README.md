@@ -17,7 +17,7 @@ Add this line to your application's Gemfile:
 # for fluentd
 gem install fluent-plugin-parser_cef
 
-# for td-agent2
+# for td-agent3
 td-agent-gem install fluent-plugin-parser_cef
 ```
 
