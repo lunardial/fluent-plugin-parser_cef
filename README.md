@@ -22,13 +22,13 @@ Add this line to your application's Gemfile:
 
 ```bash
 # for fluentd v0.12
-gem install fluent-plugin-parser_cef -v "<1.0.0"
+gem install fluent-plugin-parser_cef -v "< 1.0.0"
 
 # for fluentd v0.14 or higher
 gem install fluent-plugin-parser_cef
 
 # for td-agent2
-td-agent-gem install fluent-plugin-parser_cef -v "<1.0.0"
+td-agent-gem install fluent-plugin-parser_cef -v "< 1.0.0"
 
 # for td-agent3
 td-agent-gem install fluent-plugin-parser_cef
