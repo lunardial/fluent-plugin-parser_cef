@@ -11,10 +11,10 @@ Fluentd Parser plugin to parse CEF - common event format -
 
 ## Requirements
 
-| fluent-plugin-parser_cef  | fluentd |
-|---------------------------|---------|
-| >= 1.0.0 | >= v0.14.0 |
-|  < 1.0.0 | >= v0.12.0 |
+| fluent-plugin-parser_cef  | fluentd | ruby |
+|---------------------------|---------|------|
+| >= 1.0.0 | >= v0.14.0 | >= 2.1 |
+|  < 1.0.0 | >= v0.12.0 | >= 1.9 |
 
 ## Installation
 
