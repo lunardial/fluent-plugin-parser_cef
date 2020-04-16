@@ -9,9 +9,13 @@ module Fluent
   module Plugin
     class CommonEventFormatParser < Parser
       Fluent::Plugin.register_parser("cef", self)
+
+      REGEXP_DETECT_RFC5424 = /^[1-9]\d{0,2}/
+
       config_param :log_format, :string, :default => "syslog"
       config_param :log_utc_offset, :string, :default => nil
       config_param :syslog_timestamp_format, :string, :default => '\w{3}\s+\d{1,2}\s\d{2}:\d{2}:\d{2}'
+      config_param :syslog_timestamp_format_5424, :string, :default => '\d{4}[-]\d{2}[-]\d{2}[T]\d{2}[:]\d{2}[:]\d{2}(?:\.\d{1,6})?(?:[+-]\d{2}[:]\d{2}|Z)'
       config_param :cef_version, :integer, :default => 0
       config_param :parse_strict_mode, :bool, :default => true
       config_param :cef_keyfilename, :string, :default => 'config/cef_version_0_keys.yaml'
@@ -21,8 +25,11 @@ module Fluent
         super
         @key_value_format_regexp = /([^\s=]+)=(.*?)(?:(?=[^\s=]+=)|\z)/
         @valid_format_regexp = create_valid_format_regexp
+        @valid_format_regexp_5424 = create_valid_format_regexp_5424
         @utc_offset = get_utc_offset(@log_utc_offset)
         begin
+          $log.trace(@valid_format_regexp)
+          $log.trace(@valid_format_regexp_5424)
           if @parse_strict_mode
             if @cef_keyfilename =~ /^\//
               yaml_fieldinfo = YAML.load_file(@cef_keyfilename)
@@ -39,6 +46,7 @@ module Fluent
           @parse_strict_mode = false
           $log.warn "running without strict mode because of the following error"
           $log.warn "#{e.message}"
+          
         end
       end
 
@@ -47,10 +55,17 @@ module Fluent
           yield nil, nil
           return
         end
+        log.trace(text)
         text.force_encoding("utf-8")
         replaced_text = text.scrub('?')
         record = {}
-        record_overview = @valid_format_regexp.match(replaced_text)
+        if REGEXP_DETECT_RFC5424.match(text)
+          record_overview = @valid_format_regexp_5424.match(replaced_text)
+          log.trace "match 5424"
+        else
+          record_overview = @valid_format_regexp.match(replaced_text)
+          log.trace "match 3164"
+        end
         if record_overview.nil?
           yield Engine.now, { "raw" => replaced_text }
           return
@@ -117,6 +132,40 @@ module Fluent
           raise Fluent::ConfigError, "#{@log_format} is unknown format"
         end
         return Regexp.new(valid_format_regexp)
+      end
+
+      def create_valid_format_regexp_5424()
+        case @log_format
+        when "syslog"
+          syslog_header = /
+            (?:[1-9])\s
+            (?<syslog_timestamp>#{@syslog_timestamp_format_5424})\s
+            (?<syslog_hostname>\S+)\s
+            (?<syslog_tag>\S+)\s
+            (?<pid>\S+)\s
+            (?<msgid>\S+)\s
+            (?<extradata>(?:\-|(?:\[.*?(?<!\\)\])+))\s
+          /x
+          cef_header = /
+            CEF:(?<cef_version>#{@cef_version})\|
+            (?<cef_device_vendor>[^|]*)\|
+            (?<cef_device_product>[^|]*)\|
+            (?<cef_device_version>[^|]*)\|
+            (?<cef_device_event_class_id>[^|]*)\|
+            (?<cef_name>[^|]*)\|
+            (?<cef_severity>[^|]*)
+          /x
+          valid_format_regexp_5424 = /
+              \A
+                #{syslog_header}
+                #{cef_header}\|
+                (?<cef_extension>.*)
+              \z
+            /x
+        else
+          raise Fluent::ConfigError, "#{@log_format} is unknown format"
+        end
+        return Regexp.new(valid_format_regexp_5424)
       end
 
       def get_unixtime_with_utc_offset(timestamp, utc_offset)
