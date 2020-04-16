@@ -46,6 +46,7 @@ module Fluent
           @parse_strict_mode = false
           $log.warn "running without strict mode because of the following error"
           $log.warn "#{e.message}"
+          
         end
       end
 
