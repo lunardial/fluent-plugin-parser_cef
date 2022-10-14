@@ -173,6 +173,8 @@ cef_key_names_for_event_consumers:
 
 # CEF Key Names For Palo Alto
 cef_key_names_for_paloalto:
+  - slocation
+  - dlocation
   - PanOSPacketsReceived
   - PanOSPacketsSent
   - PanOSThreatCategory
