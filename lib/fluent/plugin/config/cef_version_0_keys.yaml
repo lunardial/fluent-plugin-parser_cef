@@ -219,4 +219,5 @@ cef_key_names_for_paloalto:
   - PanOSSSLResponseTime
   - PanOSGatewayPriority
   - PanOSAttemptedGateways
-  - PanOSGateway=$gateway
+  - PanOSGateway
+  - PanOSEndpointDeviceSN
