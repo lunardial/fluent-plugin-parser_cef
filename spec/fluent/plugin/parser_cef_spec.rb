@@ -373,5 +373,70 @@ RSpec.describe Fluent::Plugin::CommonEventFormatParser do
           "dpt" => "80",
           "msg" => "\xe3\x2e\x2e\x2e".scrub('?') }]}
     end
+    context "syslog message is BASIC Log for Palo Alto FW" do
+      let (:config) {%[
+        log_utc_offset  +09:00
+      ]}
+      let (:text) { "Jan 1 00:00:00 Paloalto - CEF:0|Palo Alto Networks|PAN-OS|10.1.8|TRAFFIC|end|0|" }
+      subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Fluent::EventTime.now)
+        @timestamp = Time.parse("Jan 1 00:00:00 +09:00").to_i
+        @test_driver = create_driver(config)
+        parsed = nil
+        @test_driver.instance.parse(text) do |time, record|
+          parsed = [time, record]
+        end
+        parsed
+      end
+      it { is_expected.to eq [
+        @timestamp, {
+          "syslog_timestamp" => "Jan 1 00:00:00",
+          "syslog_hostname" => "Paloalto",
+          "syslog_tag" => "-",
+          "cef_version" => "0",
+          "cef_device_vendor" => "Palo Alto Networks",
+          "cef_device_product" => "PAN-OS",
+          "cef_device_version" => "10.1.8",
+          "cef_device_event_class_id" => "TRAFFIC",
+          "cef_name" => "end",
+          "cef_severity" => "0",
+          }
+        ]
+      }
+    end
+    context "syslog message is FW traffic Log for Palo Alto FW" do
+      let (:config) {%[
+        log_utc_offset  +09:00
+      ]}
+      let (:text) { "Jan 1 00:00:00 Paloalto - CEF:0|Palo Alto Networks|PAN-OS|10.1.7|TRAFFIC|start|0|deviceExternalId=000000000000001 PanOSPacketsReceived=0 PanOSPacketsSent=1" }
+      subject do
+        allow(Fluent::Engine).to receive(:now).and_return(Fluent::EventTime.now)
+        @timestamp = Time.parse("Jan 1 00:00:00 +09:00").to_i
+        @test_driver = create_driver(config)
+        parsed = nil
+        @test_driver.instance.parse(text) do |time, record|
+          parsed = [time, record]
+        end
+        parsed
+      end
+      it { is_expected.to eq [
+        @timestamp, {
+          "syslog_timestamp" => "Jan 1 00:00:00",
+          "syslog_hostname" => "Paloalto",
+          "syslog_tag" => "-",
+          "cef_version" => "0",
+          "cef_device_vendor" => "Palo Alto Networks",
+          "cef_device_product" => "PAN-OS",
+          "cef_device_version" => "10.1.7",
+          "cef_device_event_class_id" => "TRAFFIC",
+          "cef_name" => "start",
+          "cef_severity" => "0",
+          "deviceExternalId" => "000000000000001",
+          "PanOSPacketsReceived" => "0",
+          "PanOSPacketsSent" => "1",
+          }
+        ]
+      }
+    end
   end
 end
